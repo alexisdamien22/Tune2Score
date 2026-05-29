@@ -1,3 +1,4 @@
+# core/music_quantizer.py
 def quantize_sequence(raw_sequence, bpm):
     """
     Prend la séquence brute en secondes et traduit les durées ET les départs
