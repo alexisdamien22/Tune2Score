@@ -12,7 +12,10 @@
         input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
         button { padding: 10px 20px; background: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
         button:hover { background: #27ae60; }
+        .btn-pdf { background: #e74c3c; margin-bottom: 20px; display: inline-block; text-decoration: none; }
+        .btn-pdf:hover { background: #c0392b; }
         #resultZone { margin-top: 40px; display: none; }
+        #actionsZone { margin-bottom: 15px; }
         .score-box { border: 1px solid #eee; background: #fff; padding: 10px; border-radius: 4px; overflow-x: auto; width: 100%; }
     </style>
 </head>
@@ -43,6 +46,9 @@
 
     <div id="resultZone">
         <h2>Votre Partition :</h2>
+        
+        <div id="actionsZone"></div>
+        
         <div class="score-box" id="svgContainer"></div>
     </div>
 </div>
@@ -60,23 +66,38 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     formData.append('tempo', tempo);
     formData.append('time_signature', timeSignature);
 
+    // Reset et état de chargement
+    document.getElementById('actionsZone').innerHTML = "";
     document.getElementById('svgContainer').innerHTML = "Analyse et tracé en cours...";
     document.getElementById('resultZone').style.display = "block";
 
     try {
-        // Envoi des données à notre API FastAPI
+        // 1. Envoi des données à notre API FastAPI
         const response = await fetch('http://127.0.0.1:8000/api/upload', {
             method: 'POST',
             body: formData
         });
         
+        if (!response.ok) {
+            throw new Error("Erreur lors du traitement du fichier par le serveur.");
+        }
+        
         const data = await response.json();
         
-        // Récupération du SVG propre depuis l'URL dédiée
+        // 2. Récupération du SVG propre depuis l'URL dédiée
         const svgResponse = await fetch(data.svg_url);
         const svgCode = await svgResponse.text();
         
-        // Injection directe du code XML dans la page web !
+        // 3. Ajout du bouton PDF si l'URL est fournie
+        if (data.pdf_url) {
+            document.getElementById('actionsZone').innerHTML = `
+                <a href="${data.pdf_url}" target="_blank" style="text-decoration: none;">
+                    <button type="button" class="btn-pdf">Télécharger en PDF 📄</button>
+                </a>
+            `;
+        }
+        
+        // 4. Injection directe du code XML du SVG dans la page web
         document.getElementById('svgContainer').innerHTML = svgCode;
 
     } catch (error) {

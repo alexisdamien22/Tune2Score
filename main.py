@@ -2,9 +2,11 @@
 import os
 import json
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
-from fastapi.responses import Response
+from fastapi.responses import Response, FileResponse  # Ajout de FileResponse pour le téléchargement
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
+from svglib.svglib import svg2rlg
+from reportlab.graphics import renderPDF
 
 # Nos modules
 from config import engine, init_db
@@ -24,7 +26,9 @@ app.add_middleware(
 )
 
 UPLOAD_FOLDER = 'uploads'
+PDF_FOLDER = 'pdfs'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(PDF_FOLDER, exist_ok=True)
 
 LAST_GENERATED_SVG = ""
 
@@ -56,17 +60,21 @@ async def upload_audio(
 ):
     global LAST_GENERATED_SVG
 
+    # 1. Sauvegarde de l'audio
     file_path = os.path.join(UPLOAD_FOLDER, audio.filename)
     with open(file_path, "wb") as buffer:
         buffer.write(await audio.read())
 
     try:
+        # 2. Pipeline de traitement musical
         raw_sequence = analyze_audio_file(file_path)
         final_sequence = quantize_sequence(raw_sequence, bpm=tempo)
         LAST_GENERATED_SVG = generate_svg_score(final_sequence)
 
+        # 3. Récupération de l'utilisateur
         user = db.exec(select(User).where(User.username == "alexis_test")).one()
 
+        # 4. Enregistrement en base de données de l'audio
         db_audio = AudioFile(
             user_id=user.id,
             file_name=audio.filename,
@@ -77,12 +85,30 @@ async def upload_audio(
         db.commit()
         db.refresh(db_audio)
 
+        # 5. GÉNÉRATION DU PDF AUTOMATIQUE
+        base_name = os.path.splitext(audio.filename)[0]
+        temp_svg_path = os.path.join(PDF_FOLDER, f"{base_name}.svg")
+        pdf_path = os.path.join(PDF_FOLDER, f"{base_name}.pdf")
+
+        # On écrit temporairement le SVG sur le disque pour que svglib le lise
+        with open(temp_svg_path, "w", encoding="utf-8") as f:
+            f.write(LAST_GENERATED_SVG)
+
+        # Conversion SVG -> PDF via ReportLab
+        drawing = svg2rlg(temp_svg_path)
+        renderPDF.drawToFile(drawing, pdf_path)
+        
+        # Nettoyage du fichier SVG temporaire
+        if os.path.exists(temp_svg_path):
+            os.remove(temp_svg_path)
+
+        # 6. Enregistrement du Score avec le VRAI chemin du PDF
         db_score = Score(
             audio_file_id=db_audio.id,
             tempo_bpm=tempo,
             time_signature=time_signature,
             musical_data=json.dumps(final_sequence),
-            pdf_path="not_generated_yet"
+            pdf_path=pdf_path
         )
         db.add(db_score)
         db.commit()
@@ -95,7 +121,8 @@ async def upload_audio(
                 "saved_in_db": True
             },
             "sequence": final_sequence,
-            "svg_url": "http://127.0.0.1:8000/api/view-svg"
+            "svg_url": "http://127.0.0.1:8000/api/view-svg",
+            "pdf_url": f"http://127.0.0.1:8000/api/download-pdf/{db_score.id}"
         }
 
     except Exception as e:
@@ -107,3 +134,16 @@ async def view_svg():
     if not LAST_GENERATED_SVG:
         return Response(content="Aucune partition générée.", status_code=404)
     return Response(content=LAST_GENERATED_SVG, media_type="image/svg+xml")
+
+# Nouvelle route pour télécharger le PDF généré depuis la base de données
+@app.get("/api/download-pdf/{score_id}")
+async def download_pdf(score_id: int, db: Session = Depends(get_session)):
+    score = db.get(Score, score_id)
+    if not score or score.pdf_path == "not_generated_yet" or not os.path.exists(score.pdf_path):
+        raise HTTPException(status_code=404, detail="Fichier PDF introuvable.")
+    
+    return FileResponse(
+        path=score.pdf_path, 
+        filename=os.path.basename(score.pdf_path), 
+        media_type="application/pdf"
+    )
