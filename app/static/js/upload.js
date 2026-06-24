@@ -10,13 +10,11 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     formData.append('tempo', tempo);
     formData.append('time_signature', timeSignature);
 
-    // Reset de l'affichage et état de chargement
     document.getElementById('actionsZone').innerHTML = "";
     document.getElementById('svgContainer').innerHTML = "<div class='loader'>Analyse et tracé en cours...</div>";
     document.getElementById('resultZone').style.display = "block";
 
     try {
-        // Envoi des données à l'API FastAPI
         const response = await fetch('http://127.0.0.1:8000/api/upload', {
             method: 'POST',
             body: formData
@@ -28,11 +26,9 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         
         const data = await response.json();
         
-        // Récupération du SVG généré
         const svgResponse = await fetch(data.svg_url);
         const svgCode = await svgResponse.text();
         
-        // Ajout dynamique du bouton de téléchargement PDF si l'URL est fournie
         if (data.pdf_url) {
             document.getElementById('actionsZone').innerHTML = `
                 <a href="${data.pdf_url}" target="_blank" style="text-decoration: none;">
@@ -41,7 +37,6 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
             `;
         }
         
-        // Affichage du rendu visuel de la partition
         document.getElementById('svgContainer').innerHTML = svgCode;
 
     } catch (error) {

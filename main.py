@@ -1,7 +1,7 @@
 # main.py
 import os
 import json
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, Request  # <-- Validé
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, Request
 from fastapi.responses import Response, FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -19,9 +19,7 @@ from core.svg_generator import generate_svg_score
 app = FastAPI()
 
 # --- CONFIGURATION DES DOSSIERS STATIQUES ET TEMPLATES ---
-# Lie le dossier public 'app/static' à l'URL '/static' (pour le CSS découper et le JS)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-# Initialise Jinja2 pour chercher les squelettes HTML dans 'app/templates'
 templates = Jinja2Templates(directory="app/templates")
 
 app.add_middleware(
@@ -60,7 +58,7 @@ def get_session():
 
 # --- ROUTE FRONTEND : PAGE D'ACCUEIL ---
 @app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request): # <-- Remplace "any" par "Request"
+async def read_root(request: Request):
     """Affiche la page du convertisseur en utilisant les templates Jinja2"""
     return templates.TemplateResponse("index.html", {"request": request})
 
@@ -95,7 +93,6 @@ async def upload_audio(
         db.commit()
         db.refresh(db_audio)
 
-        # Génération automatique du PDF
         base_name = os.path.splitext(audio.filename)[0]
         temp_svg_path = os.path.join(PDF_FOLDER, f"{base_name}.svg")
         pdf_path = os.path.join(PDF_FOLDER, f"{base_name}.pdf")

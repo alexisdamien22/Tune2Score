@@ -3,10 +3,8 @@ import os
 from sqlmodel import create_engine, SQLModel
 from dotenv import load_dotenv
 
-# Charge les variables d'environnement du fichier .env
 load_dotenv()
 
-# os.getenv va chercher la valeur de DATABASE_URL définie dans ton fichier .env
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:

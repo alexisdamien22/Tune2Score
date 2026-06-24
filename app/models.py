@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List, Optional
 from sqlmodel import Field, Relationship, SQLModel
 from sqlalchemy import Column, Integer, ForeignKey
-from sqlalchemy.orm import relationship  # Import natif indispensable ici
+from sqlalchemy.orm import relationship
 
 class User(SQLModel, table=True):
     __tablename__ = "users"
@@ -16,7 +16,6 @@ class User(SQLModel, table=True):
     role: str = Field(default="user")
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    # On passe directement l'objet relationship à sa_relationship
     audio_files: List[AudioFile] = Relationship(
         sa_relationship=relationship("AudioFile", back_populates="user", cascade="all, delete-orphan")
     )

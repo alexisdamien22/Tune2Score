@@ -1,8 +1,6 @@
-/* Importation de tes sous-modules de style */
 @import 'buttons.css';
 @import 'background.css';
 
-/* Styles généraux de la page index */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: #f4f7f6;
