@@ -1,0 +1,28 @@
+/* Style des boutons de l'application */
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.2s ease-in-out;
+}
+
+.btn-submit {
+    background: #2ecc71;
+    color: white;
+}
+
+.btn-submit:hover {
+    background: #27ae60;
+}
+
+.btn-pdf {
+    background: #e74c3c;
+    color: white;
+    margin-bottom: 20px;
+}
+
+.btn-pdf:hover {
+    background: #c0392b;
+}
