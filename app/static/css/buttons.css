@@ -25,3 +25,29 @@ button {
 .btn-pdf:hover {
     background: #c0392b;
 }
+
+.user-profile-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #34495e;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.user-icon {
+    fill: #ecf0f1; /* Couleur blanche/grise de l'icône */
+    transition: fill 0.2s;
+}
+
+/* Effets au survol */
+.user-profile-btn:hover {
+    background-color: #3498db; /* Devient bleu au survol */
+    transform: scale(1.05); /* Grossit un tout petit peu */
+}
+
+.user-profile-btn:hover .user-icon {
+    fill: #ffffff; /* L'icône devient blanc pur */
+}

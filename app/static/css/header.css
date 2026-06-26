@@ -1,0 +1,32 @@
+.main-header {
+    background-color: #2c3e50;
+    padding: 10px 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.header-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between; /* Aligne Logo à gauche, Nav au centre, Icône à droite */
+    align-items: center;
+}
+
+.logo {
+    color: #fff;
+    font-size: 22px;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.main-nav a {
+    color: #ecf0f1;
+    text-decoration: none;
+    margin: 0 15px;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.main-nav a:hover {
+    color: #3498db;
+}

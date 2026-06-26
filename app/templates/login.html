@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}Tune2Score - Connexion{% endblock %}
+
+{% block content %}
+<div class="auth-box">
+    <h1>Se connecter</h1>
+    <p class="subtitle">Accédez à votre espace pour retrouver vos morceaux quantifiés.</p>
+
+    <form id="loginForm">
+        <div class="form-group block-input">
+            <label for="username">Nom d'utilisateur ou Email</label>
+            <input type="text" id="username" required placeholder="Votre pseudo ou email">
+        </div>
+        
+        <div class="form-group block-input">
+            <label for="password">Mot de passe</label>
+            <input type="password" id="password" required placeholder="••••••••">
+        </div>
+        
+        <button type="submit" class="btn-submit">Connexion</button>
+    </form>
+
+    <div id="messageZone" class="message-zone"></div>
+
+    <div class="auth-switch">
+        <p>Pas encore de compte ? <a href="/register">S'inscrire</a></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/login.js"></script>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Tune2Score - Inscription{% endblock %}
+
+{% block content %}
+<div class="auth-box">
+    <h1>Créer un compte</h1>
+    <p class="subtitle">Rejoignez Tune2Score pour sauvegarder et retrouver toutes vos partitions générées.</p>
+
+    <form id="registerForm">
+        <div class="form-group block-input">
+            <label for="username">Nom d'utilisateur</label>
+            <input type="text" id="username" required placeholder="Ex: amadeus34">
+        </div>
+
+        <div class="form-group block-input">
+            <label for="email">Adresse Email</label>
+            <input type="email" id="email" required placeholder="Ex: mozart@tune2score.com">
+        </div>
+        
+        <div class="form-group block-input">
+            <label for="password">Mot de passe</label>
+            <input type="password" id="password" required placeholder="••••••••">
+        </div>
+        
+        <button type="submit" class="btn-submit">S'inscrire</button>
+    </form>
+
+    <div id="messageZone" class="message-zone"></div>
+
+    <div class="auth-switch">
+        <p>Déjà un compte ? <a href="/login">Se connecter</a></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/register.js"></script>
+{% endblock %}
