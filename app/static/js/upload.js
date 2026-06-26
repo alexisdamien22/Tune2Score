@@ -1,3 +1,5 @@
+// app/static/js/upload.js
+
 document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -5,14 +7,30 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     const tempo = document.getElementById('tempo').value;
     const timeSignature = document.getElementById('timeSignature').value;
     
+    const loadingZone = document.getElementById('loadingZone');
+    const resultZone = document.getElementById('resultZone');
+    const svgContainer = document.getElementById('svgContainer');
+    const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+    const submitBtn = document.getElementById('submitBtn');
+
+    if (!fileInput.files || fileInput.files.length === 0) return;
+
     const formData = new FormData();
     formData.append('audio', fileInput.files[0]);
     formData.append('tempo', tempo);
     formData.append('time_signature', timeSignature);
 
-    document.getElementById('actionsZone').innerHTML = "";
-    document.getElementById('svgContainer').innerHTML = "<div class='loader'>Analyse et tracé en cours...</div>";
-    document.getElementById('resultZone').style.display = "block";
+    const userJson = localStorage.getItem("tune2score_user");
+    if (userJson) {
+        const user = JSON.parse(userJson);
+        formData.append('username', user.username);
+    } else {
+        formData.append('username', 'alexis_test');
+    }
+
+    if (submitBtn) submitBtn.disabled = true;
+    if (loadingZone) loadingZone.style.display = "block";
+    if (resultZone) resultZone.style.display = "none";
 
     try {
         const response = await fetch('http://127.0.0.1:8000/api/upload', {
@@ -21,7 +39,8 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         });
         
         if (!response.ok) {
-            throw new Error("Erreur lors du traitement du fichier par le serveur.");
+            const errData = await response.json();
+            throw new Error(errData.detail || "Erreur lors du traitement du fichier par le serveur.");
         }
         
         const data = await response.json();
@@ -29,18 +48,28 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         const svgResponse = await fetch(data.svg_url);
         const svgCode = await svgResponse.text();
         
-        if (data.pdf_url) {
-            document.getElementById('actionsZone').innerHTML = `
-                <a href="${data.pdf_url}" target="_blank" style="text-decoration: none;">
-                    <button type="button" class="btn-pdf">Télécharger en PDF 📄</button>
-                </a>
-            `;
+        if (svgContainer) {
+            svgContainer.innerHTML = svgCode;
         }
         
-        document.getElementById('svgContainer').innerHTML = svgCode;
+        if (downloadPdfBtn && data.pdf_url) {
+            downloadPdfBtn.href = data.pdf_url;
+            downloadPdfBtn.style.display = "inline-block";
+        }
+        
+        if (resultZone) resultZone.style.display = "block";
 
     } catch (error) {
-        document.getElementById('svgContainer').innerHTML = "<div class='error'>Erreur lors de la génération de la partition.</div>";
+        alert("Une erreur est survenue : " + error.message);
+        if (svgContainer) {
+            svgContainer.innerHTML = `<div class="error-text" style="color: red; text-align: center; margin-top: 20px;">
+                Erreur lors de la génération de la partition.
+            </div>`;
+        }
         console.error(error);
+    } finally {
+        // Désactivation du mode chargement quoi qu'il arrive
+        if (loadingZone) loadingZone.style.display = "none";
+        if (submitBtn) submitBtn.disabled = false;
     }
 });

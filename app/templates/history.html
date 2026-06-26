@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Tune2Score - Mon Historique{% endblock %}
+
+{% block content %}
+<div class="history-container">
+    <h1>Mon Historique de Partitions</h1>
+    <p class="subtitle">Retrouvez et téléchargez toutes vos partitions générées précédemment.</p>
+
+    <div id="historyList" class="history-list">
+        <p class="loading-text">Chargement de votre historique...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/history.js"></script>
+{% endblock %}

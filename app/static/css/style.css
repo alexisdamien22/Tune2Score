@@ -2,6 +2,7 @@
 @import 'background.css';
 @import 'header.css';
 @import 'dropdown_user.css';
+@import 'history.css';
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;

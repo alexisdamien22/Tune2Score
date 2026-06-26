@@ -1,0 +1,48 @@
+.history-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    text-align: left;
+}
+
+.history-table th, .history-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.history-table th {
+    background-color: #f8f9fa;
+    color: #333;
+    font-weight: 600;
+}
+
+.btn-download {
+    background-color: #2ecc71;
+    color: white;
+    padding: 6px 12px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+.btn-download:hover {
+    background-color: #27ae60;
+}
+
+.empty-text, .loading-text {
+    text-align: center;
+    color: #666;
+    padding: 30px;
+    font-style: italic;
+}

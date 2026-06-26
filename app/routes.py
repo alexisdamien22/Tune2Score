@@ -23,6 +23,9 @@ UPLOAD_FOLDER = 'uploads'
 PDF_FOLDER = 'pdfs'
 LAST_GENERATED_SVG = ""
 
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(PDF_FOLDER, exist_ok=True)
+
 class UserRegister(BaseModel):
     username: str
     email: str
@@ -51,6 +54,13 @@ async def view_login(request: Request):
     """Affiche la page de connexion"""
     return templates.TemplateResponse("login.html", {"request": request})
 
+@router.get("/history", response_class=HTMLResponse)
+async def view_history(request: Request):
+    """Affiche la page d'historique des partitions"""
+    return templates.TemplateResponse("history.html", {"request": request})
+
+
+# --- ROUTES API (AUTHENTIFICATION) ---
 
 @router.post("/api/register")
 async def api_register(user_data: UserRegister, db: Session = Depends(get_session)):
@@ -105,13 +115,48 @@ async def api_login(credentials: UserLogin, db: Session = Depends(get_session)):
         }
     }
 
+@router.get("/api/history/{username}")
+async def get_user_history(username: str, db: Session = Depends(get_session)):
+    """Récupère l'historique des partitions d'un utilisateur spécifique"""
+    user = db.exec(select(User).where(User.username == username)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur non trouvé.")
+
+    statement = (
+        select(Score, AudioFile.file_name)
+        .join(AudioFile, Score.audio_file_id == AudioFile.id)
+        .where(AudioFile.user_id == user.id)
+        .order_by(Score.id.desc())
+    )
+    results = db.exec(statement).all()
+
+    history_list = []
+    for score, file_name in results:
+        history_list.append({
+            "id": score.id,
+            "file_name": file_name,
+            "tempo": score.tempo_bpm,
+            "time_signature": score.time_signature,
+            "pdf_url": f"http://127.0.0.1:8000/api/download-pdf/{score.id}"
+        })
+
+    return {"status": "success", "history": history_list}
+
 @router.post("/api/upload")
 async def upload_audio(
     audio: UploadFile = File(...),
     tempo: int = Form(120),
     time_signature: str = Form("4/4"),
+    username: str = Form(...),
     db: Session = Depends(get_session)
 ):
+    """API d'envoi, de conversion musicale et d'enregistrement (Sécurisée)"""
+    if not username or username == "alexis_test":
+        raise HTTPException(
+            status_code=401, 
+            detail="Action non autorisée. Vous devez créer un compte et être connecté pour convertir un fichier."
+        )
+
     global LAST_GENERATED_SVG
 
     file_path = os.path.join(UPLOAD_FOLDER, audio.filename)
@@ -123,7 +168,9 @@ async def upload_audio(
         final_sequence = quantize_sequence(raw_sequence, bpm=tempo)
         LAST_GENERATED_SVG = generate_svg_score(final_sequence)
 
-        user = db.exec(select(User).where(User.username == "alexis_test")).one()
+        user = db.exec(select(User).where(User.username == username)).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="Utilisateur non trouvé pour l'association du fichier.")
 
         db_audio = AudioFile(
             user_id=user.id,
@@ -142,11 +189,14 @@ async def upload_audio(
         with open(temp_svg_path, "w", encoding="utf-8") as f:
             f.write(LAST_GENERATED_SVG)
 
-        drawing = svg2rlg(temp_svg_path)
-        renderPDF.drawToFile(drawing, pdf_path)
-        
-        if os.path.exists(temp_svg_path):
-            os.remove(temp_svg_path)
+        try:
+            drawing = svg2rlg(temp_svg_path)
+            renderPDF.drawToFile(drawing, pdf_path)
+        except Exception as pdf_err:
+            print(f"Erreur lors de la génération PDF : {str(pdf_err)}")
+        finally:
+            if os.path.exists(temp_svg_path):
+                os.remove(temp_svg_path)
 
         db_score = Score(
             audio_file_id=db_audio.id,
@@ -171,10 +221,12 @@ async def upload_audio(
         }
 
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=500, detail=f"Erreur durant le traitement : {str(e)}")
 
 @router.get("/api/view-svg")
 async def view_svg():
+    """Permet au Frontend d'afficher le rendu de la dernière partition demandée"""
     global LAST_GENERATED_SVG
     if not LAST_GENERATED_SVG:
         return Response(content="Aucune partition générée.", status_code=404)
@@ -182,6 +234,7 @@ async def view_svg():
 
 @router.get("/api/download-pdf/{score_id}")
 async def download_pdf(score_id: int, db: Session = Depends(get_session)):
+    """Permet le téléchargement physique d'un rapport de partition PDF depuis l'historique ou l'accueil"""
     score = db.get(Score, score_id)
     if not score or score.pdf_path == "not_generated_yet" or not os.path.exists(score.pdf_path):
         raise HTTPException(status_code=404, detail="Fichier PDF introuvable.")
