@@ -147,6 +147,8 @@ async def upload_audio(
     audio: UploadFile = File(...),
     tempo: int = Form(120),
     time_signature: str = Form("4/4"),
+    tonic: str = Form("C"),
+    mode: str = Form("major"),
     username: str = Form(...),
     db: Session = Depends(get_session)
 ):
@@ -166,7 +168,7 @@ async def upload_audio(
     try:
         raw_sequence = analyze_audio_file(file_path)
         final_sequence = quantize_sequence(raw_sequence, bpm=tempo)
-        LAST_GENERATED_SVG = generate_svg_score(final_sequence)
+        LAST_GENERATED_SVG = generate_svg_score(final_sequence, tonic=tonic, mode=mode)
 
         user = db.exec(select(User).where(User.username == username)).first()
         if not user:

@@ -7,6 +7,7 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     const tempo = document.getElementById('tempo').value;
     const timeSignature = document.getElementById('timeSignature').value;
     
+    // Récupération des sélections de l'armure (Tonalité)
     const noteSelect = document.getElementById('noteSelect');
     const modeSelect = document.getElementById('modeSelect');
     

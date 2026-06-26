@@ -1,252 +1,268 @@
 # core/svg_generator.py
+import copy
 
-# Table de correspondance hauteur MIDI -> position sur les lignes (Clé de Sol)
-MIDI_TO_STAFF_STEP = {
-    57: -2, 59: -1, 60: 0, 61: 0, 62: 1, 63: 1, 64: 2, 65: 3, 66: 3, 67: 4,
-    68: 4, 69: 5, 70: 5, 71: 6, 72: 7, 73: 7, 74: 8, 75: 8, 76: 9, 77: 10
+# --- CONSTANTES DE BASE ---
+NOTE_LETTERS = ["C", "D", "E", "F", "G", "A", "B"]
+NATURAL_MIDI_VALUES = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
+LETTER_TO_BASE_STEP = {"C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6}
+
+SCALE_DEGREES = {
+    "major": [0, 2, 4, 5, 7, 9, 11],
+    "minor": [0, 2, 3, 5, 7, 8, 11]
 }
 
-SHARP_ARMOR_Y_OFFSETS = {"F": 0, "C": 3, "G": -1, "D": 2}
-BEMOL_ARMOR_Y_OFFSETS = {"B": 2, "E": 5, "A": 1}
+SHARP_ARMOR_Y_OFFSETS = {"F": 5, "C": 2, "G": 6, "D": 3, "A": 0, "E": 4, "B": 1}
+BEMOL_ARMOR_Y_OFFSETS = {"B": 2, "E": 5, "A": 1, "D": 4, "G": 0, "C": 3, "F": -1}
 
-KEY_ARMORS = {
-    ("C", "major"):  {"sharps": [], "flats": [], "flat_notes_mod12": [], "sharp_notes_mod12": []},
-    ("A", "minor"):  {"sharps": [], "flats": [], "flat_notes_mod12": [], "sharp_notes_mod12": []},
-    
-    ("G", "major"):  {"sharps": ["F"], "flats": [], "flat_notes_mod12": [], "sharp_notes_mod12": [6]},
-    ("E", "minor"):  {"sharps": ["F"], "flats": [], "flat_notes_mod12": [], "sharp_notes_mod12": [6]},
-    
-    ("D", "major"):  {"sharps": ["F", "C"], "flats": [], "flat_notes_mod12": [], "sharp_notes_mod12": [1, 6]},
-    ("B", "minor"):  {"sharps": ["F", "C"], "flats": [], "flat_notes_mod12": [], "sharp_notes_mod12": [1, 6]},
-    
-    ("A", "major"):  {"sharps": ["F", "C", "G"], "flats": [], "flat_notes_mod12": [], "sharp_notes_mod12": [1, 6, 8]},
-    ("F#", "minor"): {"sharps": ["F", "C", "G"], "flats": [], "flat_notes_mod12": [], "sharp_notes_mod12": [1, 6, 8]},
-    
-    ("E", "major"):  {"sharps": ["F", "C", "G", "D"], "flats": [], "flat_notes_mod12": [], "sharp_notes_mod12": [1, 3, 6, 8]},
-    ("C#", "minor"): {"sharps": ["F", "C", "G", "D"], "flats": [], "flat_notes_mod12": [], "sharp_notes_mod12": [1, 3, 6, 8]},
-    
-    ("B", "major"):  {"sharps": ["F", "C", "G", "D", "A"], "flats": [], "flat_notes_mod12": [], "sharp_notes_mod12": [1, 3, 6, 8, 10]},
-    ("G#", "minor"): {"sharps": ["F", "C", "G", "D", "A"], "flats": [], "flat_notes_mod12": [], "sharp_notes_mod12": [1, 3, 6, 8, 10]},
-    
-    ("F#", "major"): {"sharps": ["F", "C", "G", "D", "A", "E"], "flats": [], "flat_notes_mod12": [], "sharp_notes_mod12": [1, 3, 4, 6, 8, 10]},
-    ("D#", "minor"): {"sharps": ["F", "C", "G", "D", "A", "E"], "flats": [], "flat_notes_mod12": [], "sharp_notes_mod12": [1, 3, 4, 6, 8, 10]},
-    
-    ("C#", "major"): {"sharps": ["F", "C", "G", "D", "A", "E", "B"], "flats": [], "flat_notes_mod12": [], "sharp_notes_mod12": [0, 1, 3, 4, 6, 8, 10]},
-    ("A#", "minor"): {"sharps": ["F", "C", "G", "D", "A", "E", "B"], "flats": [], "flat_notes_mod12": [], "sharp_notes_mod12": [0, 1, 3, 4, 6, 8, 10]},
 
-    ("F", "major"):  {"sharps": [], "flats": ["B"], "flat_notes_mod12": [10], "sharp_notes_mod12": []},
-    ("D", "minor"):  {"sharps": [], "flats": ["B"], "flat_notes_mod12": [10], "sharp_notes_mod12": []},
+def get_armor_from_cycle(tonic: str, mode: str) -> dict:
+    """Calcule l'armure d'une tonalité via le cycle des quintes."""
+    SHARPS_ORDER = ["F", "C", "G", "D", "A", "E", "B"]
+    FLATS_ORDER = ["B", "E", "A", "D", "G", "C", "F"]
     
-    ("Bb", "major"): {"sharps": [], "flats": ["B", "E"], "flat_notes_mod12": [3, 10], "sharp_notes_mod12": []},
-    ("G", "minor"):  {"sharps": [], "flats": ["B", "E"], "flat_notes_mod12": [3, 10], "sharp_notes_mod12": []},
+    MAJOR_CYCLE = {
+        "C": 0,  "G": 1,  "D": 2,  "A": 3,  "E": 4,  "B": 5,  "F#": 6, "C#": 7,
+        "F": -1, "Bb": -2, "Eb": -3, "Ab": -4, "Db": -5, "Gb": -6, "Cb": -7
+    }
     
-    ("Eb", "major"): {"sharps": [], "flats": ["B", "E", "A"], "flat_notes_mod12": [3, 8, 10], "sharp_notes_mod12": []},
-    ("C", "minor"):  {"sharps": [], "flats": ["B", "E", "A"], "flat_notes_mod12": [3, 8, 10], "sharp_notes_mod12": []},
+    MINOR_RELATIVES = {
+        "A": "C", "E": "G", "B": "D", "F#": "A", "C#": "E", "G#": "B", "D#": "F#", "A#": "C#",
+        "D": "F", "G": "Bb", "C": "Eb", "F": "Ab", "Bb": "Db", "Eb": "Gb", "Ab": "Cb"
+    }
     
-    ("Ab", "major"): {"sharps": [], "flats": ["B", "E", "A", "D"], "flat_notes_mod12": [1, 3, 8, 10], "sharp_notes_mod12": []},
-    ("F", "minor"):  {"sharps": [], "flats": ["B", "E", "A", "D"], "flat_notes_mod12": [1, 3, 8, 10], "sharp_notes_mod12": []},
+    target_tonic = MINOR_RELATIVES.get(tonic, tonic) if mode == "minor" else tonic
+    cycle_value = MAJOR_CYCLE.get(target_tonic, 0)
     
-    ("Db", "major"): {"sharps": [], "flats": ["B", "E", "A", "D", "G"], "flat_notes_mod12": [1, 3, 6, 8, 10], "sharp_notes_mod12": []},
-    ("Bb", "minor"): {"sharps": [], "flats": ["B", "E", "A", "D", "G"], "flat_notes_mod12": [1, 3, 6, 8, 10], "sharp_notes_mod12": []},
-    
-    ("Gb", "major"): {"sharps": [], "flats": ["B", "E", "A", "D", "G", "C"], "flat_notes_mod12": [1, 3, 6, 8, 10, 0], "sharp_notes_mod12": []},
-    ("Eb", "minor"): {"sharps": [], "flats": ["B", "E", "A", "D", "G", "C"], "flat_notes_mod12": [1, 3, 6, 8, 10, 0], "sharp_notes_mod12": []},
-    
-    ("Cb", "major"): {"sharps": [], "flats": ["B", "E", "A", "D", "G", "C", "F"], "flat_notes_mod12": [1, 3, 4, 6, 8, 10, 11], "sharp_notes_mod12": []},
-    ("Ab", "minor"): {"sharps": [], "flats": ["B", "E", "A", "D", "G", "C", "F"], "flat_notes_mod12": [1, 3, 4, 6, 8, 10, 11], "sharp_notes_mod12": []},
-}
+    if cycle_value > 0:
+        return {"sharps": SHARPS_ORDER[:cycle_value], "flats": []}
+    elif cycle_value < 0:
+        return {"sharps": [], "flats": FLATS_ORDER[:abs(cycle_value)]}
+    return {"sharps": [], "flats": []}
 
-def generate_svg_score(final_sequence, tonic: str = "C", mode: str = "major") -> str:
-    """Génère un flux de données SVG structuré multi-portées incluant ligatures complexes et armures."""
-    if not final_sequence:
-        return '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="100"><rect width="100%" height="100%" fill="#ffffff"/><text x="20" y="50">Aucune donnée</text></svg>'
 
-    armor = KEY_ARMORS.get((tonic, mode), KEY_ARMORS[("C", "major")])
+def derive_scale_spellings(tonic: str, mode: str) -> dict:
+    """Génère la structure de la gamme (MIDI mod 12 -> Lettre) sans décalage indésirable."""
+    # Normalisation des toniques reçues depuis l'UI
+    clean_tonic = tonic.replace("b", "♭").replace("#", "♯")
+    tonic_letter = clean_tonic[0]
     
+    start_midi = NATURAL_MIDI_VALUES[tonic_letter]
+    if "♯" in clean_tonic: start_midi += 1
+    if "♭" in clean_tonic: start_midi -= 1
+    start_midi %= 12
+    
+    letter_idx = NOTE_LETTERS.index(tonic_letter)
+    scale_map = {}
+    degrees = SCALE_DEGREES.get(mode, SCALE_DEGREES["major"])
+    
+    for i in range(7):
+        current_midi = (start_midi + degrees[i]) % 12
+        current_letter = NOTE_LETTERS[(letter_idx + i) % 7]
+        scale_map[current_midi] = current_letter
+        
+    return scale_map
+
+
+def detect_and_correct_tuning_issue(sequence: list, tonic: str, mode: str) -> int:
+    """Détecte si l'instrument souffre d'un décalage global d'accordage."""
+    if not sequence:
+        return 0
+
+    correct_scale = derive_scale_spellings(tonic, mode)
+    correct_pitches_mod12 = set(correct_scale.keys())
+
+    score_as_is = 0
+    score_shifted_down = 0
+    score_shifted_up = 0
+
+    for item in sequence:
+        p = item.get("pitch_midi", 0) % 12
+        if p in correct_pitches_mod12:
+            score_as_is += 1
+        if (p + 1) % 12 in correct_pitches_mod12:
+            score_shifted_down += 1
+        if (p - 1) % 12 in correct_pitches_mod12:
+            score_shifted_up += 1
+
+    # Le garde-fou : on ne corrige que s'il y a un avantage massif et évident
+    if score_shifted_down > score_as_is and score_shifted_down > score_shifted_up:
+        return 1
+    elif score_shifted_up > score_as_is and score_shifted_up > score_shifted_down:
+        return -1
+    return 0
+
+
+def get_clean_note_display(pitch_midi: int, armor: dict, tonic: str, mode: str) -> tuple[int, str]:
+    """Donne la position verticale et l'altération sans inventer de fausses notes."""
+    pitch_mod12 = pitch_midi % 12
+    scale = derive_scale_spellings(tonic, mode)
+    is_flat_tonality = len(armor.get("flats", [])) > 0
+    
+    if pitch_mod12 in scale:
+        letter = scale[pitch_mod12]
+        step = LETTER_TO_BASE_STEP[letter]
+        natural_midi = NATURAL_MIDI_VALUES[letter]
+        
+        diff = (pitch_mod12 - natural_midi) % 12
+        if diff > 6: diff -= 12
+        
+        if abs(diff) <= 2:
+            accidental = ""
+            if diff == 1:
+                if letter not in armor.get("sharps", []): accidental = "♯"
+            elif diff == 2:
+                accidental = "𝄪"
+            elif diff == -1:
+                if letter not in armor.get("flats", []): accidental = "♭"
+            elif diff == -2:
+                accidental = "𝄫"
+            elif diff == 0:
+                if letter in armor.get("sharps", []) or letter in armor.get("flats", []):
+                    accidental = "♮"
+            return step, accidental
+
+    # Plan de secours enharmonique strict
+    if is_flat_tonality:
+        fallback_letters = {0:"C", 1:"D", 2:"D", 3:"E", 4:"E", 5:"F", 6:"G", 7:"G", 8:"A", 9:"A", 10:"B", 11:"B"}
+        letter = fallback_letters[pitch_mod12]
+        step = LETTER_TO_BASE_STEP[letter]
+        natural_midi = NATURAL_MIDI_VALUES[letter]
+        diff = (pitch_mod12 - natural_midi) % 12
+        if diff > 6: diff -= 12
+        accidental = "♭" if diff == -1 else ("♮" if (letter in armor.get("flats", [])) and diff == 0 else "")
+    else:
+        fallback_letters = {0:"C", 1:"C", 2:"D", 3:"D", 4:"E", 5:"F", 6:"F", 7:"G", 8:"G", 9:"A", 10:"A", 11:"B"}
+        letter = fallback_letters[pitch_mod12]
+        step = LETTER_TO_BASE_STEP[letter]
+        natural_midi = NATURAL_MIDI_VALUES[letter]
+        diff = (pitch_mod12 - natural_midi) % 12
+        if diff > 6: diff -= 12
+        accidental = "♯" if diff == 1 else ("♮" if (letter in armor.get("sharps", [])) and diff == 0 else "")
+
+    return step, accidental
+
+
+def generate_svg_score(sequence: list, tonic: str = "C", mode: str = "major") -> str:
+    """Génère le rendu SVG en protégeant l'intégrité de la séquence originale."""
+    # SÉCURITÉ : On fait une copie profonde pour éviter les effets de bord d'une Tonalité à l'autre !
+    local_sequence = copy.deepcopy(sequence)
+    
+    armor = get_armor_from_cycle(tonic, mode)
+    if not local_sequence:
+        return '<svg viewBox="0 0 1100 300" width="100%"><text x="50" y="100" font-family="sans-serif">Aucune note détectée.</text></svg>'
+
+    tuning_correction = detect_and_correct_tuning_issue(local_sequence, tonic, mode)
+
     page_width = 1100
-    staff_width = 1000  
     row_height = 180    
     start_y = 80        
     line_spacing = 10   
     
     armor_count = max(len(armor.get("sharps", [])), len(armor.get("flats", [])))
-    start_x_cursor = 110 + (armor_count * 12)
+    start_x_cursor = 150 + (armor_count * 15)
 
-    x_test = start_x_cursor
-    total_rows = 1
-    beats_in_measure_test = 0.0
-    max_beats_per_measure = 4.0
-    
-    for item in final_sequence:
-        beats_value = item.get("beats_value", 1.0)
-        if beats_in_measure_test + beats_value > max_beats_per_measure:
-            beats_in_measure_test = 0.0
-        if x_test > staff_width:
-            total_rows += 1
-            x_test = start_x_cursor  
-        beats_in_measure_test += beats_value
-        x_test += 65
+    current_row = 0
+    x_cursor = start_x_cursor
+    notes_with_positions = []
 
-    page_height = start_y + (total_rows * row_height) - 40
-    
-    svg = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{page_width}" height="{page_height}" viewBox="0 0 {page_width} {page_height}">']
-    svg.append('<rect width="100%" height="100%" fill="#ffffff"/>')
-    
+    for item in local_sequence:
+        duration = item.get("duration_seconds", 0.4)
+        if duration <= 0.3:
+            note_type = "eighth"
+            note_width = 45
+        elif duration <= 0.6:
+            note_type = "quarter"
+            note_width = 65
+        else:
+            note_type = "half"
+            note_width = 90
+            
+        if x_cursor + note_width > page_width - 50:
+            current_row += 1
+            x_cursor = start_x_cursor
+            
+        notes_with_positions.append({
+            "item": item, "row": current_row, "x": x_cursor, "width": note_width, "type": note_type
+        })
+        x_cursor += note_width
+
+    total_rows = current_row + 1
+    page_height = start_y + (total_rows * row_height) + 50
+    svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {page_width} {page_height}" width="100%" height="{page_height}" style="background-color: #fff;">']
+
     def draw_staff_row(current_staff_y):
-        """Sous-routine traçant une portée complète et ses attributs de clé/armure."""
         for l in range(5):
             y = current_staff_y + (l * line_spacing)
-            svg.append(f'<line x1="30" y1="{y}" x2="{page_width-30}" y2="{y}" stroke="#222222" stroke-width="1.2"/>')
+            svg.append(f'<line x1="30" y1="{y}" x2="{page_width-30}" y2="{y}" stroke="#222" stroke-width="1.2"/>')
+        svg.append(f'<text x="45" y="{current_staff_y + 32}" font-family="serif" font-size="45" font-weight="bold" fill="#111">𝄞</text>')
         
-        svg.append(f'<text x="40" y="{current_staff_y + 32}" font-family="serif" font-size="45" font-weight="bold" fill="#111">𝄞</text>')
-        
-        cx = 85
+        cx = 95
         for sharp_note in armor.get("sharps", []):
             offset = SHARP_ARMOR_Y_OFFSETS.get(sharp_note, 0)
             y_sharp = (current_staff_y + 20) - (offset * (line_spacing / 2))
-            svg.append(f'<text x="{cx}" y="{y_sharp}" font-family="serif" font-size="18" font-weight="bold" fill="#111">♯</text>')
-            cx += 11
-            
+            svg.append(f'<text x="{cx}" y="{y_sharp}" font-family="serif" font-size="24" font-weight="bold" fill="#111">♯</text>')
+            cx += 14
         for flat_note in armor.get("flats", []):
             offset = BEMOL_ARMOR_Y_OFFSETS.get(flat_note, 0)
             y_flat = (current_staff_y + 20) - (offset * (line_spacing / 2))
-            svg.append(f'<text x="{cx}" y="{y_flat}" font-family="serif" font-size="18" font-weight="bold" fill="#111">♭</text>')
-            cx += 11
+            svg.append(f'<text x="{cx}" y="{y_flat}" font-family="serif" font-size="24" fill="#111">♭</text>')
+            cx += 14
 
-    current_row_index = 0
-    staff_y = start_y + (current_row_index * row_height)
-    draw_staff_row(staff_y)  
-    
-    x_cursor = start_x_cursor
-    beats_in_measure = 0.0
-    note_group = []
+    for r in range(total_rows):
+        staff_y = start_y + (r * row_height)
+        draw_staff_row(staff_y)
+        row_notes = [n for n in notes_with_positions if n["row"] == r]
+        eighth_group = []
 
-    def draw_group_beams_and_stems(group):
-        """Calcule les lignes d'équations des ligatures et intercepte les hampes au millimètre."""
-        if not group:
-            return
-        
-        if len(group) == 1:
-            item, x, y_note = group[0]
-            if item["duration"] != "ronde":
-                y_stem_top = y_note - 30
-                svg.append(f'<line x1="{x + 5.5}" y1="{y_note}" x2="{x + 5.5}" y2="{y_stem_top}" stroke="#111111" stroke-width="1.5"/>')
-                if item["duration"] == "croche":
-                    svg.append(f'<path d="M {x + 5.5} {y_stem_top} Q {x + 13} {y_stem_top + 8} {x + 11} {y_stem_top + 16}" stroke="#111" stroke-width="1.5" fill="none"/>')
-                elif item["duration"] == "double-croche":
-                    svg.append(f'<path d="M {x + 5.5} {y_stem_top} Q {x + 13} {y_stem_top + 8} {x + 11} {y_stem_top + 16}" stroke="#111" stroke-width="1.5" fill="none"/>')
-                    svg.append(f'<path d="M {x + 5.5} {y_stem_top + 5} Q {x + 13} {y_stem_top + 13} {x + 11} {y_stem_top + 21}" stroke="#111" stroke-width="1.5" fill="none"/>')
-            return
-
-        x_first, y_note_first = group[0][1], group[0][2]
-        x_last, y_note_last = group[-1][1], group[-1][2]
-        y_beam_first = y_note_first - 32
-        y_beam_last = y_note_last - 32
-
-        m = (y_beam_last - y_beam_first) / (x_last - x_first) if x_last != x_first else 0
-        p = y_beam_first - m * x_first
-
-        for item, x, y_note in group:
-            target_y_stem_top = m * (x + 5.5) + p 
-            svg.append(f'<line x1="{x + 5.5}" y1="{y_note}" x2="{x + 5.5}" y2="{target_y_stem_top}" stroke="#111111" stroke-width="1.5"/>')
-
-        svg.append(f'<line x1="{x_first + 5.5}" y1="{y_beam_first}" x2="{x_last + 5.5}" y2="{y_beam_last}" stroke="#111111" stroke-width="3.8"/>')
-
-        in_double = False
-        sub_x_start = None
-        for i, (item, x, y_note) in enumerate(group):
-            is_double = (item["duration"] == "double-croche")
-            if is_double and not in_double:
-                in_double = True
-                sub_x_start = x + 5.5
-            elif not is_double and in_double:
-                sub_x_end = group[i-1][1] + 5.5
-                y_b2_start = m * sub_x_start + p + 6
-                y_b2_end = m * sub_x_end + p + 6
-                svg.append(f'<line x1="{sub_x_start}" y1="{y_b2_start}" x2="{sub_x_end}" y2="{y_b2_end}" stroke="#111111" stroke-width="3.8"/>')
-                in_double = False
-
-        if in_double:
-            sub_x_end = group[-1][1] + 5.5
-            y_b2_start = m * sub_x_start + p + 6
-            y_b2_end = m * sub_x_end + p + 6
-            svg.append(f'<line x1="{sub_x_start}" y1="{y_b2_start}" x2="{sub_x_end}" y2="{y_b2_end}" stroke="#111111" stroke-width="3.8"/>')
-
-    ALL_SHARP_MIDI_MOD12 = [1, 3, 6, 8, 10]
-
-    for item in final_sequence:
-        beats_value = item.get("beats_value", 1.0)
-        is_dotted = item.get("dotted", False)
-        
-        if beats_in_measure + beats_value > max_beats_per_measure:
-            if note_group:
-                draw_group_beams_and_stems(note_group)
-                note_group = []
-            svg.append(f'<line x1="{x_cursor - 15}" y1="{staff_y}" x2="{x_cursor - 15}" y2="{staff_y + 40}" stroke="#222222" stroke-width="1.5"/>')
-            beats_in_measure = 0.0
-
-        if x_cursor > staff_width:
-            if note_group:
-                draw_group_beams_and_stems(note_group)
-                note_group = []
-            svg.append(f'<line x1="{page_width-30}" y1="{staff_y}" x2="{page_width-30}" y2="{staff_y + 40}" stroke="#222222" stroke-width="1.5"/>')
-            current_row_index += 1
-            staff_y = start_y + (current_row_index * row_height)
-            draw_staff_row(staff_y)
-            x_cursor = start_x_cursor
-
-        beats_in_measure += beats_value
-
-        if item["type"] != "note" or item["duration"] not in ["croche", "double-croche"]:
-            if note_group:
-                draw_group_beams_and_stems(note_group)
-                note_group = []
-
-        if item["type"] == "rest":
-            y_rest = staff_y + 15
-            if item["duration"] in ["ronde", "blanche"]:
-                svg.append(f'<rect x="{x_cursor}" y="{y_rest}" width="14" height="7" fill="#111"/>')
-            elif item["duration"] == "noire":
-                svg.append(f'<text x="{x_cursor}" y="{y_rest+16}" font-family="serif" font-size="26" fill="#111">𝄽</text>')
-            else:
-                svg.append(f'<text x="{x_cursor}" y="{y_rest+14}" font-family="serif" font-size="22" fill="#111">𝄾</text>')
-            if is_dotted:
-                svg.append(f'<circle cx="{x_cursor + 18}" cy="{staff_y + 20}" r="2" fill="#111"/>')
-            x_cursor += 65
-
-        elif item["type"] == "note":
-            pitch = item["pitch_midi"]
-            step = MIDI_TO_STAFF_STEP.get(pitch, 4)
-            y_note = (staff_y + 40) - (step * (line_spacing / 2))
+        for idx, n_pos in enumerate(row_notes):
+            item = n_pos["item"]
+            nx = n_pos["x"]
+            ntype = n_pos["type"]
             
-            pitch_mod12 = pitch % 12
-            if pitch_mod12 in ALL_SHARP_MIDI_MOD12:
-                if pitch_mod12 not in armor.get("sharp_notes_mod12", []):
-                    svg.append(f'<text x="{x_cursor - 14}" y="{y_note + 5}" font-family="serif" font-size="20" font-weight="bold" fill="#111">♯</text>')
-            else:
-                if 6 in armor.get("sharp_notes_mod12", []) and pitch_mod12 == 5:
-                    svg.append(f'<text x="{x_cursor - 14}" y="{y_note + 5}" font-family="serif" font-size="20" fill="#111">♮</text>')
-
-            is_filled = item["duration"] not in ["ronde", "blanche"]
-            if is_filled:
-                svg.append(f'<ellipse cx="{x_cursor}" cy="{y_note}" rx="5.5" ry="4" transform="rotate(-20 {x_cursor} {y_note})" fill="#111111"/>')
-            else:
-                svg.append(f'<ellipse cx="{x_cursor}" cy="{y_note}" rx="5.5" ry="4" transform="rotate(-20 {x_cursor} {y_note})" stroke="#111111" stroke-width="1.8" fill="none"/>')
-                
-            if is_dotted:
-                svg.append(f'<circle cx="{x_cursor + 9}" cy="{y_note - 2}" r="1.8" fill="#111111"/>')
-
-            if item["duration"] in ["croche", "double-croche"]:
-                note_group.append((item, x_cursor, y_note))
-            elif item["duration"] != "ronde":
-                svg.append(f'<line x1="{x_cursor + 5.5}" y1="{y_note}" x2="{x_cursor + 5.5}" y2="{y_note - 30}" stroke="#111111" stroke-width="1.5"/>')
+            # Application de la correction sur une variable locale étanche
+            pitch = item["pitch_midi"] + tuning_correction
             
-            x_cursor += 65
-            
-    if note_group:
-        draw_group_beams_and_stems(note_group)
+            step_in_octave, accidental = get_clean_note_display(pitch, armor, tonic, mode)
+            octave = (pitch // 12) - 5
+            total_step = step_in_octave + (octave * 7)
+            ny = (staff_y + 40) - (total_step * (line_spacing / 2))
 
-    svg.append(f'<line x1="{x_cursor - 15}" y1="{staff_y}" x2="{x_cursor - 15}" y2="{staff_y + 40}" stroke="#222222" stroke-width="3"/>')
+            if total_step <= -2:
+                for l_sup in range(total_step, 0, 2):
+                    if l_sup % 2 == 0:
+                        y_sup = (staff_y + 40) - (l_sup * (line_spacing / 2))
+                        svg.append(f'<line x1="{nx-6}" y1="{y_sup}" x2="{nx+20}" y2="{y_sup}" stroke="#333" stroke-width="1"/>')
+            elif total_step >= 10:
+                for l_sup in range(10, total_step + 1, 2):
+                    if l_sup % 2 == 0:
+                        y_sup = (staff_y + 40) - (l_sup * (line_spacing / 2))
+                        svg.append(f'<line x1="{nx-6}" y1="{y_sup}" x2="{nx+20}" y2="{y_sup}" stroke="#333" stroke-width="1"/>')
+
+            if accidental:
+                svg.append(f'<text x="{nx-15}" y="{ny+6}" font-family="serif" font-size="20" font-weight="bold" fill="#111">{accidental}</text>')
+
+            fill_color = "#111" if ntype in ["quarter", "eighth"] else "none"
+            svg.append(f'<ellipse cx="{nx+7}" cy="{ny}" rx="6.5" ry="4.5" transform="rotate(-20 {nx+7} {ny})" fill="{fill_color}" stroke="#111" stroke-width="1.5"/>')
+
+            go_down = total_step >= 4
+            hx = nx + 0.5 if go_down else nx + 13.5
+            hy_end = ny + 28 if go_down else ny - 28
+            svg.append(f'<line x1="{hx}" y1="{ny}" x2="{hx}" y2="{hy_end}" stroke="#111" stroke-width="1.8"/>')
+
+            if ntype == "eighth":
+                eighth_group.append((hx, hy_end))
+                if idx == len(row_notes) - 1 or row_notes[idx+1]["type"] != "eighth" or len(eighth_group) >= 4:
+                    if len(eighth_group) > 1:
+                        x1, y1 = eighth_group[0]
+                        x2, y2 = eighth_group[-1]
+                        svg.append(f'<polygon points="{x1},{y1} {x2},{y2} {x2},{y2+4} {x1},{y1+4}" fill="#111"/>')
+                    else:
+                        cx_flag, cy_flag = eighth_group[0]
+                        dy = 12 if go_down else -12
+                        svg.append(f'<path d="M {cx_flag} {cy_flag} Q {cx_flag+6} {cy_flag+dy/2} {cx_flag+2} {cy_flag+dy}" stroke="#111" stroke-width="1.8" fill="none"/>')
+                    eighth_group = []
+            else:
+                eighth_group = []
+
     svg.append('</svg>')
-    
-    return "\n".join(svg)
+    return "".join(svg)
