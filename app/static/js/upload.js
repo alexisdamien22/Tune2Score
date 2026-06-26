@@ -7,6 +7,9 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     const tempo = document.getElementById('tempo').value;
     const timeSignature = document.getElementById('timeSignature').value;
     
+    const noteSelect = document.getElementById('noteSelect');
+    const modeSelect = document.getElementById('modeSelect');
+    
     const loadingZone = document.getElementById('loadingZone');
     const resultZone = document.getElementById('resultZone');
     const svgContainer = document.getElementById('svgContainer');
@@ -19,6 +22,9 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     formData.append('audio', fileInput.files[0]);
     formData.append('tempo', tempo);
     formData.append('time_signature', timeSignature);
+    
+    if (noteSelect) formData.append('tonic', noteSelect.value);
+    if (modeSelect) formData.append('mode', modeSelect.value);
 
     const userJson = localStorage.getItem("tune2score_user");
     if (userJson) {
@@ -68,7 +74,6 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         }
         console.error(error);
     } finally {
-        // Désactivation du mode chargement quoi qu'il arrive
         if (loadingZone) loadingZone.style.display = "none";
         if (submitBtn) submitBtn.disabled = false;
     }
