@@ -142,6 +142,28 @@ def get_clean_note_display(pitch_midi: int, armor: dict, tonic: str, mode: str) 
     return step, accidental
 
 
+def get_rhythm_properties(item: dict) -> tuple[str, int, bool, bool]:
+    """Détermine le type de figure et la largeur à partir de la quantification musicale."""
+    duration_label = item.get("duration", "")
+    beats_value = item.get("beats_value", 0.0)
+    dotted = bool(item.get("dotted", False))
+    if duration_label == "ronde":
+        note_type = "whole"
+    elif duration_label == "blanche":
+        note_type = "half"
+    elif duration_label == "noire":
+        note_type = "quarter"
+    elif duration_label == "croche":
+        note_type = "eighth"
+    elif duration_label == "double-croche":
+        note_type = "sixteenth"
+    else:
+        note_type = "quarter"
+
+    note_width = max(30, int(beats_value * 30) + 20)
+    return note_type, note_width, dotted, item.get("type") == "rest"
+
+
 def generate_svg_score(sequence: list, tonic: str = "C", mode: str = "major") -> str:
     """Génère le rendu SVG en protégeant l'intégrité de la séquence originale."""
     # SÉCURITÉ : On fait une copie profonde pour éviter les effets de bord d'une Tonalité à l'autre !
@@ -166,23 +188,19 @@ def generate_svg_score(sequence: list, tonic: str = "C", mode: str = "major") ->
     notes_with_positions = []
 
     for item in local_sequence:
-        duration = item.get("duration_seconds", 0.4)
-        if duration <= 0.3:
-            note_type = "eighth"
-            note_width = 45
-        elif duration <= 0.6:
-            note_type = "quarter"
-            note_width = 65
-        else:
-            note_type = "half"
-            note_width = 90
-            
+        note_type, note_width, dotted, is_rest = get_rhythm_properties(item)
         if x_cursor + note_width > page_width - 50:
             current_row += 1
             x_cursor = start_x_cursor
-            
+
         notes_with_positions.append({
-            "item": item, "row": current_row, "x": x_cursor, "width": note_width, "type": note_type
+            "item": item,
+            "row": current_row,
+            "x": x_cursor,
+            "width": note_width,
+            "type": note_type,
+            "dotted": dotted,
+            "is_rest": is_rest
         })
         x_cursor += note_width
 
@@ -218,7 +236,17 @@ def generate_svg_score(sequence: list, tonic: str = "C", mode: str = "major") ->
             item = n_pos["item"]
             nx = n_pos["x"]
             ntype = n_pos["type"]
-            
+            dotted = n_pos["dotted"]
+            is_rest = n_pos["is_rest"]
+
+            if is_rest:
+                rest_x = nx + (n_pos["width"] / 2)
+                rest_y = staff_y + 30
+                svg.append(f'<rect x="{rest_x-6}" y="{rest_y-5}" width="12" height="4" fill="#111"/>')
+                if dotted:
+                    svg.append(f'<circle cx="{rest_x+12}" cy="{rest_y}" r="2" fill="#111"/>')
+                continue
+
             # Application de la correction sur une variable locale étanche
             pitch = item["pitch_midi"] + tuning_correction
             
@@ -241,13 +269,17 @@ def generate_svg_score(sequence: list, tonic: str = "C", mode: str = "major") ->
             if accidental:
                 svg.append(f'<text x="{nx-15}" y="{ny+6}" font-family="serif" font-size="20" font-weight="bold" fill="#111">{accidental}</text>')
 
-            fill_color = "#111" if ntype in ["quarter", "eighth"] else "none"
+            fill_color = "#111" if ntype in ["quarter", "eighth", "sixteenth"] else "none"
             svg.append(f'<ellipse cx="{nx+7}" cy="{ny}" rx="6.5" ry="4.5" transform="rotate(-20 {nx+7} {ny})" fill="{fill_color}" stroke="#111" stroke-width="1.5"/>')
 
-            go_down = total_step >= 4
-            hx = nx + 0.5 if go_down else nx + 13.5
-            hy_end = ny + 28 if go_down else ny - 28
-            svg.append(f'<line x1="{hx}" y1="{ny}" x2="{hx}" y2="{hy_end}" stroke="#111" stroke-width="1.8"/>')
+            if dotted:
+                svg.append(f'<circle cx="{nx+18}" cy="{ny-1}" r="2" fill="#111"/>')
+
+            if ntype != "whole":
+                go_down = total_step >= 4
+                hx = nx + 0.5 if go_down else nx + 13.5
+                hy_end = ny + 28 if go_down else ny - 28
+                svg.append(f'<line x1="{hx}" y1="{ny}" x2="{hx}" y2="{hy_end}" stroke="#111" stroke-width="1.8"/>')
 
             if ntype == "eighth":
                 eighth_group.append((hx, hy_end))
@@ -260,8 +292,14 @@ def generate_svg_score(sequence: list, tonic: str = "C", mode: str = "major") ->
                         cx_flag, cy_flag = eighth_group[0]
                         dy = 12 if go_down else -12
                         svg.append(f'<path d="M {cx_flag} {cy_flag} Q {cx_flag+6} {cy_flag+dy/2} {cx_flag+2} {cy_flag+dy}" stroke="#111" stroke-width="1.8" fill="none"/>')
-                    eighth_group = []
-            else:
+                    eighth_group = []            
+            elif ntype == "sixteenth":
+                if go_down:
+                    svg.append(f'<path d="M {hx} {hy_end} Q {hx+6} {hy_end+6} {hx+2} {hy_end+12}" stroke="#111" stroke-width="1.8" fill="none"/>')
+                    svg.append(f'<path d="M {hx} {hy_end+10} Q {hx+6} {hy_end+16} {hx+2} {hy_end+22}" stroke="#111" stroke-width="1.8" fill="none"/>')
+                else:
+                    svg.append(f'<path d="M {hx} {hy_end} Q {hx+6} {hy_end-6} {hx+2} {hy_end-12}" stroke="#111" stroke-width="1.8" fill="none"/>')
+                    svg.append(f'<path d="M {hx} {hy_end-10} Q {hx+6} {hy_end-16} {hx+2} {hy_end-22}" stroke="#111" stroke-width="1.8" fill="none"/>')
                 eighth_group = []
 
     svg.append('</svg>')
