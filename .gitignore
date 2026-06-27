@@ -5,7 +5,10 @@ __pycache__/
 *.pyo
 *.pyd
 uploads/
+.wav
+.mp3
 pdfs/
+.pdf
 
 .DS_Store
 .vscode/
