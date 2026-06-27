@@ -230,6 +230,40 @@ def generate_svg_score(sequence: list, tonic: str = "C", mode: str = "major") ->
         staff_y = start_y + (r * row_height)
         draw_staff_row(staff_y)
         row_notes = [n for n in notes_with_positions if n["row"] == r]
+
+        for n_pos in row_notes:
+            item = n_pos["item"]
+            pitch = item["pitch_midi"] + tuning_correction
+            step_in_octave, accidental = get_clean_note_display(pitch, armor, tonic, mode)
+            octave = (pitch // 12) - 5
+            total_step = step_in_octave + (octave * 7)
+            ny = (staff_y + 40) - (total_step * (line_spacing / 2))
+            n_pos.update({
+                "pitch": pitch,
+                "accidental": accidental,
+                "total_step": total_step,
+                "ny": ny,
+                "go_down_default": total_step >= 4
+            })
+
+        i = 0
+        while i < len(row_notes):
+            current = row_notes[i]
+            if current["type"] in ("eighth", "sixteenth") and not current["is_rest"]:
+                j = i
+                group = [current]
+                while j + 1 < len(row_notes) and row_notes[j + 1]["type"] == current["type"] and not row_notes[j + 1]["is_rest"]:
+                    j += 1
+                    group.append(row_notes[j])
+                if len(group) > 1:
+                    down_count = sum(1 for n in group if n["go_down_default"])
+                    beam_down = down_count >= len(group) / 2
+                    for n in group:
+                        n["beam_down"] = beam_down
+                i = j + 1
+            else:
+                i += 1
+
         eighth_group = []
 
         for idx, n_pos in enumerate(row_notes):
@@ -238,6 +272,11 @@ def generate_svg_score(sequence: list, tonic: str = "C", mode: str = "major") ->
             ntype = n_pos["type"]
             dotted = n_pos["dotted"]
             is_rest = n_pos["is_rest"]
+            pitch = n_pos["pitch"]
+            accidental = n_pos["accidental"]
+            total_step = n_pos["total_step"]
+            ny = n_pos["ny"]
+            go_down = n_pos.get("beam_down", n_pos["go_down_default"])
 
             if is_rest:
                 rest_x = nx + (n_pos["width"] / 2)
@@ -276,13 +315,12 @@ def generate_svg_score(sequence: list, tonic: str = "C", mode: str = "major") ->
                 svg.append(f'<circle cx="{nx+18}" cy="{ny-1}" r="2" fill="#111"/>')
 
             if ntype != "whole":
-                go_down = total_step >= 4
-                hx = nx + 0.5 if go_down else nx + 13.5
-                hy_end = ny + 28 if go_down else ny - 28
-                svg.append(f'<line x1="{hx}" y1="{ny}" x2="{hx}" y2="{hy_end}" stroke="#111" stroke-width="1.8"/>')
+                stem_x = nx + 1 if go_down else nx + 13.5
+                stem_y_end = ny + 28 if go_down else ny - 28
+                svg.append(f'<line x1="{stem_x}" y1="{ny}" x2="{stem_x}" y2="{stem_y_end}" stroke="#111" stroke-width="1.8"/>')
 
             if ntype == "eighth":
-                eighth_group.append((hx, hy_end))
+                eighth_group.append((stem_x, stem_y_end))
                 if idx == len(row_notes) - 1 or row_notes[idx+1]["type"] != "eighth" or len(eighth_group) >= 4:
                     if len(eighth_group) > 1:
                         x1, y1 = eighth_group[0]
@@ -290,16 +328,18 @@ def generate_svg_score(sequence: list, tonic: str = "C", mode: str = "major") ->
                         svg.append(f'<polygon points="{x1},{y1} {x2},{y2} {x2},{y2+4} {x1},{y1+4}" fill="#111"/>')
                     else:
                         cx_flag, cy_flag = eighth_group[0]
-                        dy = 12 if go_down else -12
-                        svg.append(f'<path d="M {cx_flag} {cy_flag} Q {cx_flag+6} {cy_flag+dy/2} {cx_flag+2} {cy_flag+dy}" stroke="#111" stroke-width="1.8" fill="none"/>')
-                    eighth_group = []            
+                        if go_down:
+                            svg.append(f'<path d="M {cx_flag} {cy_flag} Q {cx_flag-8} {cy_flag-8} {cx_flag-4} {cy_flag-16}" stroke="#111" stroke-width="1.8" fill="none"/>')
+                        else:
+                            svg.append(f'<path d="M {cx_flag} {cy_flag} Q {cx_flag+8} {cy_flag+8} {cx_flag+4} {cy_flag+16}" stroke="#111" stroke-width="1.8" fill="none"/>')
+                    eighth_group = []
             elif ntype == "sixteenth":
                 if go_down:
-                    svg.append(f'<path d="M {hx} {hy_end} Q {hx+6} {hy_end+6} {hx+2} {hy_end+12}" stroke="#111" stroke-width="1.8" fill="none"/>')
-                    svg.append(f'<path d="M {hx} {hy_end+10} Q {hx+6} {hy_end+16} {hx+2} {hy_end+22}" stroke="#111" stroke-width="1.8" fill="none"/>')
+                    svg.append(f'<path d="M {stem_x} {stem_y_end} Q {stem_x-8} {stem_y_end-8} {stem_x-4} {stem_y_end-16}" stroke="#111" stroke-width="1.8" fill="none"/>')
+                    svg.append(f'<path d="M {stem_x} {stem_y_end-8} Q {stem_x-8} {stem_y_end-16} {stem_x-4} {stem_y_end-24}" stroke="#111" stroke-width="1.8" fill="none"/>')
                 else:
-                    svg.append(f'<path d="M {hx} {hy_end} Q {hx+6} {hy_end-6} {hx+2} {hy_end-12}" stroke="#111" stroke-width="1.8" fill="none"/>')
-                    svg.append(f'<path d="M {hx} {hy_end-10} Q {hx+6} {hy_end-16} {hx+2} {hy_end-22}" stroke="#111" stroke-width="1.8" fill="none"/>')
+                    svg.append(f'<path d="M {stem_x} {stem_y_end} Q {stem_x+8} {stem_y_end+8} {stem_x+4} {stem_y_end+16}" stroke="#111" stroke-width="1.8" fill="none"/>')
+                    svg.append(f'<path d="M {stem_x} {stem_y_end+8} Q {stem_x+8} {stem_y_end+16} {stem_x+4} {stem_y_end+24}" stroke="#111" stroke-width="1.8" fill="none"/>')
                 eighth_group = []
 
     svg.append('</svg>')
