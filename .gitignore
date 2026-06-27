@@ -1,2 +1,11 @@
-.env
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 uploads/
+pdfs/
+
+.DS_Store
+.vscode/
+.idea/
