@@ -1,77 +1,31 @@
-.blocked-box {
-    max-width: 500px;
-    margin: 60px auto;
-    padding: 40px 20px;
-    background: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    text-align: center;
+.blocked-box{
+
+    max-width:700px;
+
+    margin:auto;
+
+    text-align:center;
+
 }
 
-.lock-icon {
-    font-size: 50px;
-    margin-bottom: 20px;
+.lock-icon{
+
+    font-size:70px;
+
+    margin-bottom:20px;
+
 }
 
-.blocked-actions {
-    margin-top: 30px;
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-}
+.blocked-actions{
 
-.btn-secondary {
-    background-color: #95a5a6;
-    color: white;
-    padding: 10px 20px;
-    text-decoration: none;
-    border-radius: 4px;
-    font-weight: bold;
-    transition: background 0.2s;
-}
+    display:flex;
 
-.btn-secondary:hover {
-    background-color: #7f8c8d;
-}
+    justify-content:center;
 
-.history-container {
-    max-width: 900px;
-    margin: 40px auto;
-    padding: 20px;
-    background: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-}
+    gap:20px;
 
-.history-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    text-align: left;
-}
+    margin-top:35px;
 
-.history-table th, .history-table td {
-    padding: 12px 15px;
-    border-bottom: 1px solid #e0e0e0;
-}
+    flex-wrap:wrap;
 
-.history-table th {
-    background-color: #f8f9fa;
-    color: #333;
-    font-weight: 600;
-}
-
-.btn-download {
-    background-color: #2ecc71;
-    color: white;
-    padding: 6px 12px;
-    text-decoration: none;
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: bold;
-    transition: background 0.2s;
-}
-
-.btn-download:hover {
-    background-color: #27ae60;
 }

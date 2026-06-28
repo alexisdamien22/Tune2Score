@@ -1,53 +1,193 @@
-button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background 0.2s ease-in-out;
+button{
+
+    font-family:inherit;
+
+    border:none;
+
+    cursor:pointer;
+
+    transition:.25s;
+
 }
 
-.btn-submit {
-    background: #2ecc71;
-    color: white;
+.btn-submit,
+.btn-download,
+.btn-secondary,
+.btn-login-nav,
+.btn-pdf{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:8px;
+
+    padding:14px 24px;
+
+    border-radius:14px;
+
+    font-size:15px;
+
+    font-weight:600;
+
+    text-decoration:none;
+
+    transition:.25s;
+
 }
 
-.btn-submit:hover {
-    background: #27ae60;
+.btn-submit{
+
+    background:var(--success);
+
+    color:white;
+
+    box-shadow:0 8px 18px rgba(46,204,113,.25);
+
 }
 
-.btn-pdf {
-    background: #e74c3c;
-    color: white;
-    margin-bottom: 20px;
+.btn-submit:hover{
+
+    background:var(--success-hover);
+
+    transform:translateY(-3px);
+
 }
 
-.btn-pdf:hover {
-    background: #c0392b;
+.btn-download{
+
+    background:var(--primary);
+
+    color:white;
+
+    box-shadow:0 8px 18px rgba(52,152,219,.25);
+
 }
 
-.user-profile-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #34495e;
-    transition: background-color 0.2s, transform 0.1s;
+.btn-download:hover{
+
+    background:var(--primary-hover);
+
+    transform:translateY(-3px);
+
 }
 
-.user-icon {
-    fill: #ecf0f1;
-    transition: fill 0.2s;
+.btn-secondary{
+
+    background:#eef2f5;
+
+    color:#34495e;
+
 }
 
-/* Effets au survol */
-.user-profile-btn:hover {
-    background-color: #3498db;
-    transform: scale(1.05);
+.btn-secondary:hover{
+
+    background:#dfe6eb;
+
+    transform:translateY(-3px);
+
 }
 
-.user-profile-btn:hover .user-icon {
-    fill: #ffffff;
+.btn-pdf{
+
+    background:var(--danger);
+
+    color:white;
+
+}
+
+.btn-pdf:hover{
+
+    background:var(--danger-hover);
+
+}
+
+.btn-login-nav{
+
+    background:var(--primary);
+
+    color:white;
+
+}
+
+.btn-login-nav:hover{
+
+    background:var(--primary-hover);
+
+}
+
+.user-profile-btn{
+
+    width:48px;
+
+    height:48px;
+
+    border-radius:50%;
+
+    background:#34495e;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    transition:.25s;
+
+}
+
+.user-profile-btn:hover{
+
+    background:var(--primary);
+
+    transform:scale(1.08);
+
+}
+
+.user-profile-btn svg{
+
+    width:24px;
+
+    height:24px;
+
+}
+
+.btn-action-small{
+
+    padding:10px 14px;
+
+    border-radius:10px;
+
+    font-size:14px;
+
+}
+
+.btn-edit{
+
+    background:#3498db;
+
+    color:white;
+
+}
+
+.btn-edit:hover{
+
+    background:#2980b9;
+
+}
+
+.btn-delete{
+
+    background:#e74c3c;
+
+    color:white;
+
+}
+
+.btn-delete:hover{
+
+    background:#c0392b;
+
 }

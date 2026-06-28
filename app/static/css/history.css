@@ -1,48 +1,180 @@
-.history-container {
-    max-width: 900px;
-    margin: 40px auto;
-    padding: 20px;
-    background: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+.history-container{
+
+    animation:fadeUp .5s;
+
 }
 
-.history-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    text-align: left;
+.history-list{
+
+    margin-top:35px;
+
 }
 
-.history-table th, .history-table td {
-    padding: 12px 15px;
-    border-bottom: 1px solid #e0e0e0;
+.history-table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    overflow:hidden;
+
+    border-radius:18px;
+
+    background:var(--surface);
+
 }
 
-.history-table th {
-    background-color: #f8f9fa;
-    color: #333;
-    font-weight: 600;
+.history-table thead{
+
+    background:#3498db;
+
+    color:white;
+
 }
 
-.btn-download {
-    background-color: #2ecc71;
-    color: white;
-    padding: 6px 12px;
-    text-decoration: none;
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: bold;
-    transition: background 0.2s;
+.history-table th{
+
+    padding:20px;
+
+    text-align:left;
+
+    font-weight:600;
+
+    letter-spacing:.4px;
+
 }
 
-.btn-download:hover {
-    background-color: #27ae60;
+.history-table td{
+
+    padding:18px 20px;
+
+    border-bottom:1px solid var(--border);
+
+    transition:.2s;
+
 }
 
-.empty-text, .loading-text {
-    text-align: center;
-    color: #666;
-    padding: 30px;
-    font-style: italic;
+.history-table tbody tr{
+
+    transition:.2s;
+
+}
+
+.history-table tbody tr:hover{
+
+    background:#f8fbfd;
+
+    transform:scale(1.005);
+
+}
+
+.history-table tbody tr:last-child td{
+
+    border:none;
+
+}
+
+.loading-text,
+.empty-text{
+
+    text-align:center;
+
+    padding:60px;
+
+    color:#95a5a6;
+
+    font-size:17px;
+
+}
+
+.error-text{
+
+    text-align:center;
+
+    color:#e74c3c;
+
+    font-weight:bold;
+
+    padding:40px;
+
+}
+
+@media(max-width:900px){
+
+.history-table,
+.history-table thead,
+.history-table tbody,
+.history-table tr,
+.history-table td{
+
+display:block;
+
+}
+
+.history-table thead{
+
+display:none;
+
+}
+
+.history-table tr{
+
+margin-bottom:25px;
+
+border-radius:18px;
+
+overflow:hidden;
+
+box-shadow:var(--shadow);
+
+background:white;
+
+}
+
+.history-table td{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+padding:16px 20px;
+
+}
+
+.history-table td::before{
+
+font-weight:bold;
+
+margin-right:20px;
+
+color:#3498db;
+
+}
+
+.history-table td:nth-child(1)::before{
+
+content:"Audio";
+
+}
+
+.history-table td:nth-child(2)::before{
+
+content:"Tempo";
+
+}
+
+.history-table td:nth-child(3)::before{
+
+content:"Mesure";
+
+}
+
+.history-table td:nth-child(4)::before{
+
+content:"PDF";
+
+}
+
 }

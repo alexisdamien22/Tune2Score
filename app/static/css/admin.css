@@ -1,38 +1,55 @@
-.role-admin {
-    color: #c0392b;
-    font-weight: bold;
+.role-admin{
+
+    color:#2ecc71;
+
+    font-weight:700;
+
 }
 
-.role-user {
-    color: #333;
-    font-weight: bold;
+.role-user{
+
+    color:#7f8c8d;
+
+    font-weight:700;
+
 }
 
-.btn-action-small {
-    padding: 6px 10px;
-    font-size: 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    border: none;
-    transition: background 0.2s ease-in-out;
+.admin-error-text{
+
+    text-align:center;
+
+    color:#e74c3c;
+
+    font-weight:bold;
+
+    padding:50px;
+
 }
 
-.btn-edit {
-    margin-right: 6px;
+.history-table td:last-child{
+
+    display:flex;
+
+    gap:10px;
+
+    flex-wrap:wrap;
+
 }
 
-.btn-delete {
-    background-color: #c0392b;
-    color: white;
+.btn-action-small{
+
+    min-width:95px;
+
 }
 
-.btn-delete:hover {
-    background-color: #a93226;
+#adminList{
+
+    margin-top:35px;
+
 }
 
-.admin-error-text {
-    color: #c0392b;
-    font-weight: bold;
-    text-align: center;
-    margin-top: 20px;
+#adminList table{
+
+    animation:fadeUp .5s;
+
 }

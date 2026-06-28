@@ -1,52 +1,177 @@
-.main-header {
-    background-color: #2c3e50;
-    padding: 10px 20px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+.main-header{
+
+position:sticky;
+
+top:0;
+
+z-index:999;
+
+background:rgba(44,62,80,.94);
+
+backdrop-filter:blur(14px);
+
+box-shadow:0 5px 20px rgba(0,0,0,.08);
+
 }
 
-.header-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.header-container{
+
+width:min(1200px,92%);
+
+margin:auto;
+
+height:75px;
+
+display:flex;
+
+align-items:center;
+
+justify-content:space-between;
+
+gap:30px;
+
 }
 
-.logo {
-    color: #fff;
-    font-size: 22px;
-    font-weight: bold;
-    text-decoration: none;
+.logo{
+
+font-size:1.6rem;
+
+font-weight:700;
+
+color:white;
+
+text-decoration:none;
+
+letter-spacing:.5px;
+
 }
 
-.main-nav a {
-    color: #ecf0f1;
-    text-decoration: none;
-    margin: 0 15px;
-    font-weight: 500;
-    transition: color 0.2s;
+.main-nav{
+
+display:flex;
+
+gap:25px;
+
 }
 
-.main-nav a:hover {
-    color: #3498db;
+.main-nav a{
+
+color:white;
+
+text-decoration:none;
+
+font-weight:600;
+
+position:relative;
+
+transition:.25s;
+
 }
 
-.admin-nav-link {
-    display: none;
-    font-weight: bold;
-    color: #2980b9;
-    padding: 10px;
-    text-decoration: none;
-    border-bottom: 1px solid #eee;
+.main-nav a::after{
+
+content:"";
+
+position:absolute;
+
+bottom:-8px;
+
+left:0;
+
+width:0;
+
+height:2px;
+
+background:#3498db;
+
+transition:.25s;
+
 }
 
-.admin-nav-link:hover {
-    background-color: #f9f9f9;
+.main-nav a:hover{
+
+color:#3498db;
+
 }
 
-.welcome-text {
-    padding: 10px;
-    margin: 0;
-    color: #555;
-    font-size: 0.9em;
+.main-nav a:hover::after{
+
+width:100%;
+
+}
+
+.header-actions{
+
+display:flex;
+
+align-items:center;
+
+gap:15px;
+
+}
+
+.btn-theme-toggle{
+
+background:none;
+
+border:1px solid rgba(255,255,255,.2);
+
+color:white;
+
+width:42px;
+
+height:42px;
+
+border-radius:50%;
+
+cursor:pointer;
+
+transition:.25s;
+
+}
+
+.btn-theme-toggle:hover{
+
+background:#3498db;
+
+transform:rotate(180deg);
+
+}
+
+.welcome-text{
+
+padding:15px;
+
+font-weight:600;
+
+}
+
+@media(max-width:850px){
+
+.header-container{
+
+height:auto;
+
+padding:20px 0;
+
+flex-direction:column;
+
+}
+
+.main-nav{
+
+flex-wrap:wrap;
+
+justify-content:center;
+
+}
+
+.header-actions{
+
+width:100%;
+
+justify-content:center;
+
+}
+
 }
