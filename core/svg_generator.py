@@ -8,7 +8,7 @@ LETTER_TO_BASE_STEP = {"C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6}
 
 SCALE_DEGREES = {
     "major": [0, 2, 4, 5, 7, 9, 11],
-    "minor": [0, 2, 3, 5, 7, 8, 11]
+    "minor": [0, 2, 3, 5, 7, 8, 10]
 }
 
 SHARP_ARMOR_Y_OFFSETS = {"F": 5, "C": 2, "G": 6, "D": 3, "A": 0, "E": 4, "B": 1}
@@ -173,8 +173,7 @@ def generate_svg_score(sequence: list, tonic: str = "C", mode: str = "major") ->
     if not local_sequence:
         return '<svg viewBox="0 0 1100 300" width="100%"><text x="50" y="100" font-family="sans-serif">Aucune note détectée.</text></svg>'
 
-    tuning_correction = detect_and_correct_tuning_issue(local_sequence, tonic, mode)
-
+    # On conserve le pitch détecté tel quel : la clé ne doit pas transposer la hauteur d'une même performance.
     page_width = 1100
     row_height = 180    
     start_y = 80        
@@ -233,7 +232,7 @@ def generate_svg_score(sequence: list, tonic: str = "C", mode: str = "major") ->
 
         for n_pos in row_notes:
             item = n_pos["item"]
-            pitch = item["pitch_midi"] + tuning_correction
+            pitch = item["pitch_midi"]
             step_in_octave, accidental = get_clean_note_display(pitch, armor, tonic, mode)
             octave = (pitch // 12) - 5
             total_step = step_in_octave + (octave * 7)
@@ -286,9 +285,7 @@ def generate_svg_score(sequence: list, tonic: str = "C", mode: str = "major") ->
                     svg.append(f'<circle cx="{rest_x+12}" cy="{rest_y}" r="2" fill="#111"/>')
                 continue
 
-            # Application de la correction sur une variable locale étanche
-            pitch = item["pitch_midi"] + tuning_correction
-            
+            pitch = item["pitch_midi"]
             step_in_octave, accidental = get_clean_note_display(pitch, armor, tonic, mode)
             octave = (pitch // 12) - 5
             total_step = step_in_octave + (octave * 7)
