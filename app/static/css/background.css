@@ -1,17 +1,22 @@
 body{
 
-background:
+    background:
 
-radial-gradient(circle at top left,
-rgba(52,152,219,.12),
-transparent 40%),
+        radial-gradient(
+            circle at top left,
+            rgba(52,152,219,.12),
+            transparent 40%
+        ),
 
-radial-gradient(circle at bottom right,
-rgba(46,204,113,.10),
-transparent 45%),
+        radial-gradient(
+            circle at bottom right,
+            rgba(46,204,113,.12),
+            transparent 45%
+        ),
 
-#f4f7f6;
+        var(--background);
 
-background-attachment:fixed;
+    background-attachment:fixed;
 
+    transition:background .35s;
 }
