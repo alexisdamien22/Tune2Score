@@ -21,6 +21,11 @@ function checkAuthStatus() {
                 if (navUserDropdown) navUserDropdown.style.display = "inline-block";
                 if (navUsername) navUsername.innerText = user.username;
 
+                const navAdminLink = document.getElementById("navAdminLink");
+                if (navAdminLink && user.role === "admin") {
+                    navAdminLink.style.display = "block";
+                }
+
                 if (allowedContent) allowedContent.style.setProperty("display", "block", "important");
                 if (blockedContent) blockedContent.style.setProperty("display", "none", "important");
             }

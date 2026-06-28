@@ -1,0 +1,38 @@
+.role-admin {
+    color: #c0392b;
+    font-weight: bold;
+}
+
+.role-user {
+    color: #333;
+    font-weight: bold;
+}
+
+.btn-action-small {
+    padding: 6px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s ease-in-out;
+}
+
+.btn-edit {
+    margin-right: 6px;
+}
+
+.btn-delete {
+    background-color: #c0392b;
+    color: white;
+}
+
+.btn-delete:hover {
+    background-color: #a93226;
+}
+
+.admin-error-text {
+    color: #c0392b;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 20px;
+}

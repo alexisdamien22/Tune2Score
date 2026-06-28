@@ -8,7 +8,7 @@
     max-width: 1200px;
     margin: 0 auto;
     display: flex;
-    justify-content: space-between; /* Aligne Logo à gauche, Nav au centre, Icône à droite */
+    justify-content: space-between;
     align-items: center;
 }
 
@@ -29,4 +29,24 @@
 
 .main-nav a:hover {
     color: #3498db;
+}
+
+.admin-nav-link {
+    display: none;
+    font-weight: bold;
+    color: #2980b9;
+    padding: 10px;
+    text-decoration: none;
+    border-bottom: 1px solid #eee;
+}
+
+.admin-nav-link:hover {
+    background-color: #f9f9f9;
+}
+
+.welcome-text {
+    padding: 10px;
+    margin: 0;
+    color: #555;
+    font-size: 0.9em;
 }

@@ -1,11 +1,12 @@
 # app/routes.py
 import os
 import json
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends, Request
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends, Request, Header
 from fastapi.responses import Response, FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from sqlmodel import Session, select
+from config import get_session
 from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPDF
 
@@ -35,6 +36,20 @@ class UserLogin(BaseModel):
     username: str
     password: str
 
+class UserUpdate(BaseModel):
+    email: str
+    role: str
+
+def verify_admin(x_user_name: str = Header(None), db: Session = Depends(get_session)):
+    """Vérifie si l'utilisateur qui fait la requête est bien un admin"""
+    if not x_user_name:
+        raise HTTPException(status_code=401, detail="Non autorisé.")
+        
+    user = db.exec(select(User).where(User.username == x_user_name)).first()
+    if not user or user.role != "admin":
+        raise HTTPException(status_code=403, detail="Accès refusé : Droits administrateur requis.")
+    return user
+
 def get_session():
     with Session(engine) as session:
         yield session
@@ -58,9 +73,6 @@ async def view_login(request: Request):
 async def view_history(request: Request):
     """Affiche la page d'historique des partitions"""
     return templates.TemplateResponse("history.html", {"request": request})
-
-
-# --- ROUTES API (AUTHENTIFICATION) ---
 
 @router.post("/api/register")
 async def api_register(user_data: UserRegister, db: Session = Depends(get_session)):
@@ -111,7 +123,8 @@ async def api_login(credentials: UserLogin, db: Session = Depends(get_session)):
         "message": "Connexion réussie",
         "user": {
             "username": user.username,
-            "email": user.email
+            "email": user.email,
+            "role": user.role
         }
     }
 
@@ -246,3 +259,61 @@ async def download_pdf(score_id: int, db: Session = Depends(get_session)):
         filename=os.path.basename(score.pdf_path), 
         media_type="application/pdf"
     )
+
+@router.get("/admin", response_class=HTMLResponse)
+async def view_admin(request: Request):
+    """Affiche la page d'administration des utilisateurs"""
+    return templates.TemplateResponse("admin.html", {"request": request})
+
+@router.get("/api/admin/users")
+async def get_all_users(admin: User = Depends(verify_admin), db: Session = Depends(get_session)):
+    """(Read) Récupère tous les utilisateurs"""
+    users = db.exec(select(User).order_by(User.id)).all()
+    users_list = [
+        {"id": u.id, "username": u.username, "email": u.email, "role": u.role} 
+        for u in users
+    ]
+    return {"status": "success", "users": users_list}
+
+@router.put("/api/admin/users/{user_id}")
+async def update_user(user_id: int, user_data: UserUpdate, admin: User = Depends(verify_admin), db: Session = Depends(get_session)):
+    """(Update) Modifie l'email ou le rôle d'un utilisateur"""
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
+    
+    if user.email != user_data.email:
+        existing = db.exec(select(User).where(User.email == user_data.email)).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Cette adresse email est déjà utilisée.")
+
+    user.email = user_data.email
+    user.role = user_data.role
+    db.add(user)
+    db.commit()
+    
+    return {"status": "success", "message": "Utilisateur mis à jour avec succès."}
+
+@router.delete("/api/admin/users/{user_id}")
+async def delete_user(user_id: int, admin: User = Depends(verify_admin), db: Session = Depends(get_session)):
+    """(Delete) Supprime un utilisateur et toutes ses partitions (cascade)"""
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
+    
+    if user.id == admin.id:
+        raise HTTPException(status_code=400, detail="Vous ne pouvez pas supprimer votre propre compte admin.")
+    
+    db.delete(user)
+    db.commit()
+    return {"status": "success", "message": "Utilisateur supprimé définitivement."}
+
+@router.get("/promote-me/{username}")
+async def force_promote(username: str, db: Session = Depends(get_session)):
+    user = db.exec(select(User).where(User.username == username)).first()
+    if user:
+        user.role = "admin"
+        db.add(user)
+        db.commit()
+        return {"message": f"{username} est maintenant admin"}
+    return {"message": "Utilisateur introuvable"}

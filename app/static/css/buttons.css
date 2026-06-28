@@ -38,16 +38,16 @@ button {
 }
 
 .user-icon {
-    fill: #ecf0f1; /* Couleur blanche/grise de l'icône */
+    fill: #ecf0f1;
     transition: fill 0.2s;
 }
 
 /* Effets au survol */
 .user-profile-btn:hover {
-    background-color: #3498db; /* Devient bleu au survol */
-    transform: scale(1.05); /* Grossit un tout petit peu */
+    background-color: #3498db;
+    transform: scale(1.05);
 }
 
 .user-profile-btn:hover .user-icon {
-    fill: #ffffff; /* L'icône devient blanc pur */
+    fill: #ffffff;
 }

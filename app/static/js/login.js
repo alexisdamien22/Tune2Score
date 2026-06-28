@@ -25,7 +25,10 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
             throw new Error(data.detail || "Une erreur est survenue lors de l'connexion.");
         }
         
-        localStorage.setItem("tune2score_user", JSON.stringify({ username: data.user.username }));
+        localStorage.setItem("tune2score_user", JSON.stringify({ 
+            username: data.user.username, 
+            role: data.user.role 
+        }));
 
         messageZone.className = "message-zone success";
         messageZone.innerText = "Connexion réussie ! Redirection vers l'accueil...";
