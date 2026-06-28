@@ -5,6 +5,16 @@
 @import 'history.css';
 @import 'admin.css';
 
+:root {
+    --primary: #4a90e2;
+    --secondary: #6c757d;
+    --bg-color: #f8f9fa;
+    --text-color: #2d3436;
+    --card-bg: #ffffff;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    --radius: 12px;
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: #f4f7f6;
@@ -84,4 +94,51 @@ body {
 
 .auth-switch a:hover {
     text-decoration: underline;
+}
+
+.btn-theme-toggle {
+    background: transparent;
+    border: 1px solid #555;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-right: 15px;
+    transition: background 0.2s;
+}
+
+.btn-theme-toggle:hover {
+    background: #444;
+}
+
+[data-theme="dark"] body {
+    background-color: #121212;
+    color: #ffffff;
+}
+
+[data-theme="dark"] .converter-box, 
+[data-theme="dark"] .history-container,
+[data-theme="dark"] .auth-box,
+[data-theme="dark"] .dropdown-menu {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border-color: #333;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+@media (max-width: 600px) {
+    .form-group {
+        display: block;
+        margin-right: 0;
+    }
+    
+    .main-header .header-container {
+        flex-direction: column;
+    }
 }

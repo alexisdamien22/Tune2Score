@@ -1,0 +1,27 @@
+:root {
+    --bg-color: #ffffff;
+    --text-color: #333333;
+    --header-bg: #f8f9fa;
+    --border-color: #e0e0e0;
+    --primary-color: #3498db;
+    --secondary-bg: #f4f7f6;
+    --shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+[data-theme="dark"] {
+    --bg-color: #121212;
+    --text-color: #e0e0e0;
+    --header-bg: #1e1e1e;
+    --border-color: #333333;
+    --primary-color: #3498db;
+    --secondary-bg: #1a1a1a;
+    --shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+    font-family: 'Inter', -apple-system, sans-serif;
+    margin: 0;
+}
